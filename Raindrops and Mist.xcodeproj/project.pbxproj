@@ -13,6 +13,9 @@
 		6EDFFF4624AF0BBD00B99143 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6EDFFF4524AF0BBD00B99143 /* Assets.xcassets */; };
 		6EDFFF4924AF0BBD00B99143 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6EDFFF4824AF0BBD00B99143 /* Preview Assets.xcassets */; };
 		6EDFFF4C24AF0BBD00B99143 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6EDFFF4A24AF0BBD00B99143 /* LaunchScreen.storyboard */; };
+		6EDFFF5424AF13EF00B99143 /* CameraInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDFFF5324AF13EF00B99143 /* CameraInput.swift */; };
+		6EDFFF5624AF418F00B99143 /* MetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDFFF5524AF418F00B99143 /* MetalView.swift */; };
+		6EDFFF5A24AFA0DB00B99143 /* CameraShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 6EDFFF5924AFA0DB00B99143 /* CameraShader.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +27,9 @@
 		6EDFFF4824AF0BBD00B99143 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		6EDFFF4B24AF0BBD00B99143 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6EDFFF4D24AF0BBD00B99143 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6EDFFF5324AF13EF00B99143 /* CameraInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraInput.swift; sourceTree = "<group>"; };
+		6EDFFF5524AF418F00B99143 /* MetalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalView.swift; sourceTree = "<group>"; };
+		6EDFFF5924AFA0DB00B99143 /* CameraShader.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CameraShader.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +69,9 @@
 				6EDFFF4A24AF0BBD00B99143 /* LaunchScreen.storyboard */,
 				6EDFFF4D24AF0BBD00B99143 /* Info.plist */,
 				6EDFFF4724AF0BBD00B99143 /* Preview Content */,
+				6EDFFF5324AF13EF00B99143 /* CameraInput.swift */,
+				6EDFFF5524AF418F00B99143 /* MetalView.swift */,
+				6EDFFF5924AFA0DB00B99143 /* CameraShader.metal */,
 			);
 			path = "Raindrops and Mist";
 			sourceTree = "<group>";
@@ -146,9 +155,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6EDFFF5624AF418F00B99143 /* MetalView.swift in Sources */,
 				6EDFFF4024AF0BBB00B99143 /* AppDelegate.swift in Sources */,
+				6EDFFF5424AF13EF00B99143 /* CameraInput.swift in Sources */,
 				6EDFFF4224AF0BBB00B99143 /* SceneDelegate.swift in Sources */,
 				6EDFFF4424AF0BBB00B99143 /* ContentView.swift in Sources */,
+				6EDFFF5A24AFA0DB00B99143 /* CameraShader.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
