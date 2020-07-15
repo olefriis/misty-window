@@ -23,12 +23,51 @@ vertex TextureMappingVertex mapTexture(unsigned int vertex_id [[ vertex_id ]]) {
     return outVertex;
 }
 
-fragment half4 displayTexture(TextureMappingVertex mappingVertex [[ stage_in ]],
-                              texture2d<float, access::sample> texture [[ texture(0) ]]) {
+fragment float4 verticalBlur(TextureMappingVertex mappingVertex [[ stage_in ]],
+                             texture2d<float, access::sample> texture [[ texture(0) ]]) {
+    float2 offset = mappingVertex.textureCoordinate;
     constexpr sampler s(address::clamp_to_edge, filter::linear);
-
-    vec<float, 4> pixel = texture.sample(s, mappingVertex.textureCoordinate);
-    //pixel[0] = pixel[2] = 1;
+    float yPixel = 1 / texture.get_height();
     
-    return half4(pixel);
+    float3 sum = float3(0.0, 0.0, 0.0);
+    
+    int samples = 20;
+    for (float i=0; i<samples; i++) {
+        sum += texture.sample(s, float2(offset.x, offset.y + i*yPixel)).rgb;
+    }
+    float4 adjusted;
+    adjusted.rgb = sum / samples;
+    adjusted.a = 1;
+    return adjusted;
+}
+
+fragment float4 horizontalBlur(TextureMappingVertex mappingVertex [[ stage_in ]],
+                               texture2d<float, access::sample> texture [[ texture(0) ]]) {
+    float2 offset = mappingVertex.textureCoordinate;
+    constexpr sampler s(address::clamp_to_edge, filter::linear);
+    float xPixel = 1 / texture.get_width();
+    
+    float3 sum = float3(0.0, 0.0, 0.0);
+    
+    int samples = 20;
+    for (float i=0; i<samples; i++) {
+        sum += texture.sample(s, float2(offset.x + i*xPixel, offset.y)).rgb;
+    }
+    float4 adjusted;
+    adjusted.rgb = sum / samples;
+    adjusted.a = 1;
+    return adjusted;
+}
+
+
+fragment float4 displayTexture(TextureMappingVertex mappingVertex [[ stage_in ]],
+                               texture2d<float, access::sample> camera [[ texture(0) ]],
+                               texture2d<float, access::sample> blur [[ texture(1) ]]) {
+    constexpr sampler s(address::clamp_to_edge, filter::linear);
+    float2 offset = mappingVertex.textureCoordinate;
+    if (distance(float2(0.5, 0.5), offset) > 0.3) {
+        return blur.sample(s, offset);
+    } else {
+        return camera.sample(s, offset);
+    }
 }

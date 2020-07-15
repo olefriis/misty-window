@@ -1,6 +1,7 @@
 import MetalKit
 import SwiftUI
 import Foundation
+import MetalPerformanceShaders
 
 struct MetalView: UIViewRepresentable {
     typealias UIViewType = MTKView
@@ -30,12 +31,17 @@ struct MetalView: UIViewRepresentable {
         var parent: MetalView
         var metalDevice: MTLDevice!
         var metalCommandQueue: MTLCommandQueue!
+        var mapTextureFunction: MTLFunction!
+        var displayTextureFunction: MTLFunction!
+        var blurredTexture: MTLTexture?
         
         init(_ parent: MetalView) {
             self.parent = parent
-            if let metalDevice = MTLCreateSystemDefaultDevice() {
-                self.metalDevice = metalDevice
-            }
+            self.metalDevice = MTLCreateSystemDefaultDevice()
+            let library = metalDevice.makeDefaultLibrary()
+            self.mapTextureFunction = library!.makeFunction(name: "mapTexture")
+            self.displayTextureFunction = library!.makeFunction(name: "displayTexture")
+
             self.metalCommandQueue = metalDevice.makeCommandQueue()!
             super.init()
         }
@@ -44,37 +50,27 @@ struct MetalView: UIViewRepresentable {
         }
 
         func draw(in view: MTKView) {
-            guard let texture = parent.cameraInput.texture
+            guard let cameraTexture = parent.cameraInput.texture
             else {
                 print("No camera input yet")
                 return
             }
-            guard
-                let device = self.metalDevice,
-                let library = metalDevice.makeDefaultLibrary()
-            else {
-                print("Missing texture or metal device")
-                return
+            
+            if textureIsMissingOrWrongDimensions(blurredTexture, asTexture: cameraTexture) {
+                blurredTexture = buildIdenticalTexture(asTexture: cameraTexture)
             }
+            blurTexture(sourceTexture: cameraTexture, destinationTexture: blurredTexture!)
             
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.sampleCount = 1
             pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
             pipelineDescriptor.depthAttachmentPixelFormat = .invalid
-            
-            /**
-             *  Vertex function to map the texture to the view controller's view
-             */
-            pipelineDescriptor.vertexFunction = library.makeFunction(name: "mapTexture")
-            /**
-             *  Fragment function to display texture's pixels in the area bounded by vertices of `mapTexture` shader
-             */
-            pipelineDescriptor.fragmentFunction = library.makeFunction(name: "displayTexture")
-            
+            pipelineDescriptor.vertexFunction = mapTextureFunction
+            pipelineDescriptor.fragmentFunction = displayTextureFunction
             
             var renderPipelineState: MTLRenderPipelineState?
             do {
-                try renderPipelineState = device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+                try renderPipelineState = metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
             }
             catch {
                 print("Failed creating a render state pipeline. Can't render the texture without one.")
@@ -94,13 +90,38 @@ struct MetalView: UIViewRepresentable {
             let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: currentRenderPassDescriptor)!
             encoder.pushDebugGroup("RenderFrame")
             encoder.setRenderPipelineState(renderPipelineState!)
-            encoder.setFragmentTexture(texture, index: 0)
+            encoder.setFragmentTexture(cameraTexture, index: 0)
+            encoder.setFragmentTexture(blurredTexture, index: 1)
             encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
             encoder.popDebugGroup()
             encoder.endEncoding()
             
             commandBuffer.present(currentDrawable)
             commandBuffer.commit()
+        }
+        
+        func textureIsMissingOrWrongDimensions(_ texture: MTLTexture?, asTexture: MTLTexture) -> Bool {
+            return texture == nil
+                || texture!.width != asTexture.width
+                || texture!.height != asTexture.height
+        }
+        
+        func buildIdenticalTexture(asTexture texture: MTLTexture) -> MTLTexture {
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: texture.pixelFormat,
+                width: texture.width,
+                height: texture.height,
+                mipmapped: false)
+            textureDescriptor.usage = [.shaderRead, .shaderWrite]
+            return metalDevice.makeTexture(descriptor: textureDescriptor)!
+        }
+        
+        func blurTexture(sourceTexture: MTLTexture, destinationTexture: MTLTexture) {
+            let buffer = metalCommandQueue.makeCommandBuffer()!
+            let blur = MPSImageGaussianBlur(device: metalDevice, sigma: 40)
+            blur.encode(commandBuffer: buffer, sourceTexture: sourceTexture, destinationTexture: destinationTexture)
+            buffer.commit()
+            buffer.waitUntilCompleted()
         }
     }
 }
