@@ -33,7 +33,9 @@ struct MetalView: UIViewRepresentable {
         var metalCommandQueue: MTLCommandQueue!
         var mapTextureFunction: MTLFunction!
         var displayTextureFunction: MTLFunction!
+        var addMistKernelFunction: MTLFunction!
         var blurredTexture: MTLTexture?
+        var mistRatioTexture: MTLTexture?
         
         init(_ parent: MetalView) {
             self.parent = parent
@@ -41,6 +43,7 @@ struct MetalView: UIViewRepresentable {
             let library = metalDevice.makeDefaultLibrary()
             self.mapTextureFunction = library!.makeFunction(name: "mapTexture")
             self.displayTextureFunction = library!.makeFunction(name: "displayTexture")
+            self.addMistKernelFunction = library!.makeFunction(name: "addMist")
 
             self.metalCommandQueue = metalDevice.makeCommandQueue()!
             super.init()
@@ -60,6 +63,11 @@ struct MetalView: UIViewRepresentable {
                 blurredTexture = buildIdenticalTexture(asTexture: cameraTexture)
             }
             blurTexture(sourceTexture: cameraTexture, destinationTexture: blurredTexture!)
+            
+            if textureIsMissingOrWrongDimensions(mistRatioTexture, asTexture: cameraTexture) {
+                mistRatioTexture = buildTexture(withSizeFrom: cameraTexture, pixelFormat: .r32Float)
+            }
+            addMist(mistRatioTexture!)
             
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.sampleCount = 1
@@ -92,6 +100,7 @@ struct MetalView: UIViewRepresentable {
             encoder.setRenderPipelineState(renderPipelineState!)
             encoder.setFragmentTexture(cameraTexture, index: 0)
             encoder.setFragmentTexture(blurredTexture, index: 1)
+            encoder.setFragmentTexture(mistRatioTexture, index: 2)
             encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
             encoder.popDebugGroup()
             encoder.endEncoding()
@@ -107,8 +116,12 @@ struct MetalView: UIViewRepresentable {
         }
         
         func buildIdenticalTexture(asTexture texture: MTLTexture) -> MTLTexture {
+            return buildTexture(withSizeFrom: texture, pixelFormat: texture.pixelFormat)
+        }
+        
+        func buildTexture(withSizeFrom texture: MTLTexture, pixelFormat: MTLPixelFormat) -> MTLTexture {
             let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
-                pixelFormat: texture.pixelFormat,
+                pixelFormat: pixelFormat,
                 width: texture.width,
                 height: texture.height,
                 mipmapped: false)
@@ -122,6 +135,31 @@ struct MetalView: UIViewRepresentable {
             blur.encode(commandBuffer: buffer, sourceTexture: sourceTexture, destinationTexture: destinationTexture)
             buffer.commit()
             buffer.waitUntilCompleted()
+        }
+        
+        func addMist(_ texture: MTLTexture) {
+            do {
+                let pipeline = try metalDevice.makeComputePipelineState(function: addMistKernelFunction)
+                
+                let threadgroupCounts = MTLSizeMake(8, 8, 1);
+                let threadgroups = MTLSizeMake(texture.width / threadgroupCounts.width,
+                                               texture.height / threadgroupCounts.height,
+                                               1);
+                
+                // let pipeline=...
+                let buffer = metalCommandQueue.makeCommandBuffer()!
+                let encoder = buffer.makeComputeCommandEncoder()!
+                encoder.setComputePipelineState(pipeline)
+                encoder.setTexture(texture, index: 0)
+                // TODO: Configure argument table with finger position
+                encoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupCounts)
+                encoder.endEncoding()
+                
+                buffer.commit()
+                buffer.waitUntilCompleted()
+            } catch {
+                print("Unexpected error: \(error)")
+            }
         }
     }
 }
