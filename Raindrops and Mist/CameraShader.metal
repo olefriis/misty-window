@@ -38,11 +38,9 @@ fragment float4 displayTexture(TextureMappingVertex mappingVertex [[ stage_in ]]
         float2 raindropPos = raindrops[raindrop];
         float dist = distance(normalizedOffset, raindropPos);
         if (dist < dropRadius) {
-            float offsetX = normalizedOffset.x - raindropPos.x;
-            float offsetY = normalizedOffset.y - raindropPos.y;
-            offset.x -= (offsetX*offsetX / dropRadius * 4) * sign(offsetX);
-            offset.y -= (offsetY*offsetY / dropRadius * 4) * sign(offsetY);
-            return blur.sample(s, offset);
+            float2 raindropToHere = normalizedOffset - raindropPos;
+            float reflection = tan(dist/dropRadius * 0.9) * 3;
+            return camera.sample(s, offset - reflection*raindropToHere);
         }
     }
 
