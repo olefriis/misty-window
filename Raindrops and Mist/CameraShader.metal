@@ -51,9 +51,22 @@ fragment float4 displayTexture(TextureMappingVertex mappingVertex [[ stage_in ]]
 }
 
 kernel void addMist(texture2d<float, access::read_write> texture [[ texture(0) ]],
+                    constant float &raindropsCount [[ buffer(0) ]],
+                    constant float2 *raindrops [[ buffer(1) ]],
                     uint2 gid [[thread_position_in_grid]]) {
+    float2 normalizedOffset = float2((float) gid.x / texture.get_width(), (float) gid.y / texture.get_width());
+    float dropRadius = 0.01;
+    for (int raindrop = 0; raindrop < raindropsCount; raindrop++) {
+        float2 raindropPos = raindrops[raindrop];
+        float dist = distance(normalizedOffset, raindropPos);
+        if (dist < dropRadius) {
+            texture.write(0, gid);
+        }
+    }
+
+
     uint2 textureIndex(gid.x, gid.y);
     float previousWeight = texture.read(textureIndex).r;
-    float newWeight = min(1.0, previousWeight + 0.001);
+    float newWeight = min(1.0, previousWeight + 0.01);
     texture.write(float4(newWeight), gid);
 }

@@ -130,7 +130,7 @@ struct MetalView: UIViewRepresentable {
         func updateRaindrops() {
             for i in 0..<raindrops.count {
                 var raindrop = raindrops[i]
-                raindrop.y += 0.003
+                raindrop.y += 0.002
                 if raindrop.y > 1 {
                     raindrop.y = 0
                     raindrop.x = Float.random(in: 0..<1)
@@ -182,6 +182,11 @@ struct MetalView: UIViewRepresentable {
                 encoder.setComputePipelineState(pipeline)
                 encoder.setTexture(texture, index: 0)
                 // TODO: Configure argument table with finger position
+
+                var raindropsCount: Float = Float(raindrops.count)
+                encoder.setBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
+                encoder.setBytes(&raindrops, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropsCount), index: 1)
+
                 encoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupCounts)
                 encoder.endEncoding()
                 
