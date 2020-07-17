@@ -26,16 +26,28 @@ vertex TextureMappingVertex mapTexture(unsigned int vertex_id [[ vertex_id ]]) {
 fragment float4 displayTexture(TextureMappingVertex mappingVertex [[ stage_in ]],
                                texture2d<float, access::sample> camera [[ texture(0) ]],
                                texture2d<float, access::sample> blur [[ texture(1) ]],
-                               texture2d<float, access::sample> mist [[ texture(2) ]]) {
+                               texture2d<float, access::sample> mist [[ texture(2) ]],
+                               constant float &raindropsCount [[ buffer(0) ]],
+                               constant float2 *raindrops [[ buffer(1) ]]) {
     constexpr sampler s(address::clamp_to_edge, filter::linear);
     float2 offset = mappingVertex.textureCoordinate;
-    float2 normalizedOffet = float2(offset.x * camera.get_width() / camera.get_height(), offset.y);
-    if (distance(float2(0.5, 0.5), normalizedOffet) > 0.3) {
-        float mistRatio = mist.sample(s, offset).r;
-        return mix(camera.sample(s, offset), blur.sample(s, offset), mistRatio);
-    } else {
-        return camera.sample(s, offset);
+    float2 normalizedOffset = float2(offset.x, offset.y * camera.get_height()/ camera.get_width());
+
+    float dropRadius = 0.01;
+    for (int raindrop = 0; raindrop < raindropsCount; raindrop++) {
+        float2 raindropPos = raindrops[raindrop];
+        float dist = distance(normalizedOffset, raindropPos);
+        if (dist < dropRadius) {
+            float offsetX = normalizedOffset.x - raindropPos.x;
+            float offsetY = normalizedOffset.y - raindropPos.y;
+            offset.x -= (offsetX*offsetX / dropRadius * 4) * sign(offsetX);
+            offset.y -= (offsetY*offsetY / dropRadius * 4) * sign(offsetY);
+            return blur.sample(s, offset);
+        }
     }
+
+    float mistRatio = mist.sample(s, offset).r;
+    return mix(camera.sample(s, offset), blur.sample(s, offset), mistRatio);
 }
 
 kernel void addMist(texture2d<float, access::read_write> texture [[ texture(0) ]],

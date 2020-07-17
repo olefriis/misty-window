@@ -36,7 +36,8 @@ struct MetalView: UIViewRepresentable {
         var addMistKernelFunction: MTLFunction!
         var blurredTexture: MTLTexture?
         var mistRatioTexture: MTLTexture?
-        
+        var raindrops: [SIMD2<Float>] = []
+
         init(_ parent: MetalView) {
             self.parent = parent
             self.metalDevice = MTLCreateSystemDefaultDevice()
@@ -46,7 +47,10 @@ struct MetalView: UIViewRepresentable {
             self.addMistKernelFunction = library!.makeFunction(name: "addMist")
 
             self.metalCommandQueue = metalDevice.makeCommandQueue()!
+            
             super.init()
+
+            self.raindrops = createRaindrops()
         }
 
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
@@ -68,7 +72,8 @@ struct MetalView: UIViewRepresentable {
                 mistRatioTexture = buildTexture(withSizeFrom: cameraTexture, pixelFormat: .r32Float)
             }
             addMist(mistRatioTexture!)
-            
+            updateRaindrops()
+
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.sampleCount = 1
             pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
@@ -101,12 +106,37 @@ struct MetalView: UIViewRepresentable {
             encoder.setFragmentTexture(cameraTexture, index: 0)
             encoder.setFragmentTexture(blurredTexture, index: 1)
             encoder.setFragmentTexture(mistRatioTexture, index: 2)
+
+            var raindropsCount: Float = Float(raindrops.count)
+            encoder.setFragmentBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
+            encoder.setFragmentBytes(&raindrops, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropsCount), index: 1)
+
             encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
             encoder.popDebugGroup()
             encoder.endEncoding()
             
             commandBuffer.present(currentDrawable)
             commandBuffer.commit()
+        }
+
+        func createRaindrops() -> [SIMD2<Float>] {
+            var result: [SIMD2<Float>] = []
+            for _ in 0..<50 {
+                result.append(SIMD2<Float>(Float.random(in: 0..<1), Float.random(in: 0..<1)))
+            }
+            return result
+        }
+        
+        func updateRaindrops() {
+            for i in 0..<raindrops.count {
+                var raindrop = raindrops[i]
+                raindrop.y += 0.003
+                if raindrop.y > 1 {
+                    raindrop.y = 0
+                    raindrop.x = Float.random(in: 0..<1)
+                }
+                raindrops[i] = raindrop
+            }
         }
         
         func textureIsMissingOrWrongDimensions(_ texture: MTLTexture?, asTexture: MTLTexture) -> Bool {
