@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6ECA8EFB24C2E4900077AE72 /* MTKTouchAwareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECA8EFA24C2E4900077AE72 /* MTKTouchAwareView.swift */; };
 		6EDFFF4024AF0BBB00B99143 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDFFF3F24AF0BBB00B99143 /* AppDelegate.swift */; };
 		6EDFFF4224AF0BBB00B99143 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDFFF4124AF0BBB00B99143 /* SceneDelegate.swift */; };
 		6EDFFF4424AF0BBB00B99143 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDFFF4324AF0BBB00B99143 /* ContentView.swift */; };
@@ -19,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6ECA8EFA24C2E4900077AE72 /* MTKTouchAwareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTKTouchAwareView.swift; sourceTree = "<group>"; };
 		6EDFFF3C24AF0BBB00B99143 /* Raindrops and Mist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Raindrops and Mist.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EDFFF3F24AF0BBB00B99143 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6EDFFF4124AF0BBB00B99143 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 				6EDFFF5324AF13EF00B99143 /* CameraInput.swift */,
 				6EDFFF5524AF418F00B99143 /* MetalView.swift */,
 				6EDFFF5924AFA0DB00B99143 /* CameraShader.metal */,
+				6ECA8EFA24C2E4900077AE72 /* MTKTouchAwareView.swift */,
 			);
 			path = "Raindrops and Mist";
 			sourceTree = "<group>";
@@ -161,6 +164,7 @@
 				6EDFFF4224AF0BBB00B99143 /* SceneDelegate.swift in Sources */,
 				6EDFFF4424AF0BBB00B99143 /* ContentView.swift in Sources */,
 				6EDFFF5A24AFA0DB00B99143 /* CameraShader.metal in Sources */,
+				6ECA8EFB24C2E4900077AE72 /* MTKTouchAwareView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

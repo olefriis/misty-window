@@ -12,7 +12,7 @@ struct MetalView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-
+    
     func makeUIView(context: UIViewRepresentableContext<MetalView>) -> MTKView {
         mtkView.delegate = context.coordinator
         mtkView.preferredFramesPerSecond = 60
