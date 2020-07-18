@@ -2,6 +2,7 @@ import MetalKit
 import SwiftUI
 import Foundation
 import MetalPerformanceShaders
+import CoreMotion
 
 struct MetalView: UIViewRepresentable {
     typealias UIViewType = MTKView
@@ -29,6 +30,8 @@ struct MetalView: UIViewRepresentable {
 
     class Coordinator : NSObject, MTKViewDelegate {
         var parent: MetalView
+        let motion = CMMotionManager()
+        var gyroscopeTimer: Timer?
         var metalDevice: MTLDevice!
         var metalCommandQueue: MTLCommandQueue!
         var mapTextureFunction: MTLFunction!
@@ -51,11 +54,14 @@ struct MetalView: UIViewRepresentable {
             super.init()
 
             self.raindrops = createRaindrops()
+            if motion.isDeviceMotionAvailable {
+                motion.startDeviceMotionUpdates()
+            }
         }
 
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         }
-
+        
         func draw(in view: MTKView) {
             guard let cameraTexture = parent.cameraInput.texture
             else {
@@ -128,17 +134,45 @@ struct MetalView: UIViewRepresentable {
         }
         
         func updateRaindrops() {
+            let gravity = currentGravity()
             for i in 0..<raindrops.count {
                 var raindrop = raindrops[i]
-                raindrop.y += 0.002
-                if raindrop.y > 1 {
-                    raindrop.y = 0
-                    raindrop.x = Float.random(in: 0..<1)
+                raindrop.x += 0.002 * gravity.x
+                raindrop.y += 0.002 * gravity.y
+                if raindrop.x < 0 || raindrop.x > 1 || raindrop.y < 0 || raindrop.y > 1 {
+                    if abs(gravity.x) > abs(gravity.y) {
+                        // Place drops to the left or the right
+                        if gravity.x < 0 {
+                            // Place drops to the right
+                            raindrop.x = 1
+                        } else {
+                            raindrop.x = 0
+                        }
+                        raindrop.y = Float.random(in: 0..<1)
+                    } else {
+                        // Place drops at the top or bottom
+                        if gravity.y < 0 {
+                            // Place tops at the bottom
+                            raindrop.y = 1
+                        } else {
+                            raindrop.y = 0
+                        }
+                        raindrop.x = Float.random(in: 0..<1)
+                    }
                 }
                 raindrops[i] = raindrop
             }
         }
         
+        func currentGravity() -> SIMD2<Float> {
+            if let deviceMotion = motion.deviceMotion {
+                // Weird swapping and negating because our view is sideways...
+                return SIMD2<Float>(Float(-deviceMotion.gravity.y), Float(-deviceMotion.gravity.x))
+            }
+            // Just in case we cannot get the gravity data, we're always letting drops go down
+            return SIMD2<Float>(0, 0)
+        }
+
         func textureIsMissingOrWrongDimensions(_ texture: MTLTexture?, asTexture: MTLTexture) -> Bool {
             return texture == nil
                 || texture!.width != asTexture.width
