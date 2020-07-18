@@ -40,6 +40,7 @@ struct MetalView: UIViewRepresentable {
         var blurredTexture: MTLTexture?
         var mistRatioTexture: MTLTexture?
         var raindrops: [SIMD2<Float>] = []
+        var touches: [SIMD2<Float>] = []
 
         init(_ parent: MetalView) {
             self.parent = parent
@@ -77,8 +78,10 @@ struct MetalView: UIViewRepresentable {
             if textureIsMissingOrWrongDimensions(mistRatioTexture, asTexture: cameraTexture) {
                 mistRatioTexture = buildTexture(withSizeFrom: cameraTexture, pixelFormat: .r32Float)
             }
-            addMist(mistRatioTexture!)
             updateRaindrops()
+            updateTouches(view: view)
+
+            addMist(mistRatioTexture!)
 
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.sampleCount = 1
@@ -172,6 +175,21 @@ struct MetalView: UIViewRepresentable {
             // Just in case we cannot get the gravity data, we're always letting drops go down
             return SIMD2<Float>(0, 0)
         }
+        
+        func updateTouches(view: MTKView) {
+            let uiTouches = (view as! MTKTouchAwareView).currentTouches
+            self.touches = uiTouches.map({
+                touch in
+                let location = touch.location(in: view)
+                let x = location.x / view.frame.width
+                let y = location.y / view.frame.height
+                return SIMD2<Float>(Float(x), Float(y))
+            })
+            // Metal cannot handle an empty buffer, so we'll just add a dummy touch
+            if self.touches.isEmpty {
+                self.touches = [SIMD2<Float>(0, 0)]
+            }
+        }
 
         func textureIsMissingOrWrongDimensions(_ texture: MTLTexture?, asTexture: MTLTexture) -> Bool {
             return texture == nil
@@ -220,6 +238,10 @@ struct MetalView: UIViewRepresentable {
                 var raindropsCount: Float = Float(raindrops.count)
                 encoder.setBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
                 encoder.setBytes(&raindrops, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropsCount), index: 1)
+                
+                var touchesCount: Float = Float(touches.count)
+                encoder.setBytes(&touchesCount, length: MemoryLayout<Float>.stride, index: 2)
+                encoder.setBytes(&touches, length: MemoryLayout<SIMD2<Float>>.stride * Int(touchesCount), index: 3)
 
                 encoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupCounts)
                 encoder.endEncoding()

@@ -51,17 +51,30 @@ fragment float4 displayTexture(TextureMappingVertex mappingVertex [[ stage_in ]]
 kernel void addMist(texture2d<float, access::read_write> texture [[ texture(0) ]],
                     constant float &raindropsCount [[ buffer(0) ]],
                     constant float2 *raindrops [[ buffer(1) ]],
+                    constant float &touchesCount [[ buffer(2) ]],
+                    constant float2 *touches [[ buffer(3) ]],
                     uint2 gid [[thread_position_in_grid]]) {
     float2 normalizedOffset = float2((float) gid.x / texture.get_width(), (float) gid.y / texture.get_width());
+
     float dropRadius = 0.01;
     for (int raindrop = 0; raindrop < raindropsCount; raindrop++) {
         float2 raindropPos = raindrops[raindrop];
         float dist = distance(normalizedOffset, raindropPos);
         if (dist < dropRadius) {
             texture.write(0, gid);
+            return;
         }
     }
 
+    float touchRadius = 0.05;
+    for (int touch = 0; touch < touchesCount; touch++) {
+        float2 touchPos = touches[touch];
+        float dist = distance(normalizedOffset, touchPos);
+        if (dist < touchRadius) {
+            texture.write(0, gid);
+            return;
+        }
+    }
 
     uint2 textureIndex(gid.x, gid.y);
     float previousWeight = texture.read(textureIndex).r;
