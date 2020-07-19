@@ -25,23 +25,15 @@ class MTKTouchAwareView : MTKView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         currentTouches.formUnion(touches)
-        print("Touches began. Now \(currentTouches.count) touches.")
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
         currentTouches.subtract(touches)
-        print("Touches ended. Now \(currentTouches.count) touches.")
-    }
-    
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesMoved(touches, with: event)
-        print("Touches moved. Now \(currentTouches.count) touches.")
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
         currentTouches.subtract(touches)
-        print("Touches cancelled. Now \(currentTouches.count) touches.")
     }
 }

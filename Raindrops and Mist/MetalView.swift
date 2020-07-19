@@ -16,12 +16,10 @@ struct MetalView: UIViewRepresentable {
     func makeUIView(context: UIViewRepresentableContext<MetalView>) -> MTKView {
         mtkView.delegate = context.coordinator
         mtkView.preferredFramesPerSecond = 60
-        //mtkView.enableSetNeedsDisplay = true
         mtkView.device = MTLCreateSystemDefaultDevice()
         mtkView.framebufferOnly = false
         mtkView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
         mtkView.drawableSize = mtkView.frame.size
-        //mtkView.enableSetNeedsDisplay = true
         return mtkView
     }
 
@@ -45,18 +43,20 @@ struct MetalView: UIViewRepresentable {
         init(_ parent: MetalView) {
             self.parent = parent
             self.metalDevice = MTLCreateSystemDefaultDevice()
+            self.metalCommandQueue = metalDevice.makeCommandQueue()!
+
             let library = metalDevice.makeDefaultLibrary()
             self.mapTextureFunction = library!.makeFunction(name: "mapTexture")
             self.displayTextureFunction = library!.makeFunction(name: "displayTexture")
             self.addMistKernelFunction = library!.makeFunction(name: "addMist")
-
-            self.metalCommandQueue = metalDevice.makeCommandQueue()!
             
             super.init()
 
             self.raindrops = createRaindrops()
             if motion.isDeviceMotionAvailable {
                 motion.startDeviceMotionUpdates()
+            } else {
+                print("Device motion not available. You won't get anything out of rotating your device then.")
             }
         }
 
@@ -69,6 +69,9 @@ struct MetalView: UIViewRepresentable {
                 print("No camera input yet")
                 return
             }
+
+            updateRaindrops()
+            updateTouches(view: view)
             
             if textureIsMissingOrWrongDimensions(blurredTexture, asTexture: cameraTexture) {
                 blurredTexture = buildIdenticalTexture(asTexture: cameraTexture)
@@ -78,54 +81,9 @@ struct MetalView: UIViewRepresentable {
             if textureIsMissingOrWrongDimensions(mistRatioTexture, asTexture: cameraTexture) {
                 mistRatioTexture = buildTexture(withSizeFrom: cameraTexture, pixelFormat: .r32Float)
             }
-            updateRaindrops()
-            updateTouches(view: view)
-
             addMist(mistRatioTexture!)
 
-            let pipelineDescriptor = MTLRenderPipelineDescriptor()
-            pipelineDescriptor.sampleCount = 1
-            pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-            pipelineDescriptor.depthAttachmentPixelFormat = .invalid
-            pipelineDescriptor.vertexFunction = mapTextureFunction
-            pipelineDescriptor.fragmentFunction = displayTextureFunction
-            
-            var renderPipelineState: MTLRenderPipelineState?
-            do {
-                try renderPipelineState = metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
-            }
-            catch {
-                print("Failed creating a render state pipeline. Can't render the texture without one.")
-                return
-            }
-            
-            let commandBuffer = metalCommandQueue.makeCommandBuffer()!
-            guard
-                let currentRenderPassDescriptor = view.currentRenderPassDescriptor,
-                let currentDrawable = view.currentDrawable,
-                renderPipelineState != nil
-            else {
-                print("Missing something...")
-                return
-            }
-            
-            let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: currentRenderPassDescriptor)!
-            encoder.pushDebugGroup("RenderFrame")
-            encoder.setRenderPipelineState(renderPipelineState!)
-            encoder.setFragmentTexture(cameraTexture, index: 0)
-            encoder.setFragmentTexture(blurredTexture, index: 1)
-            encoder.setFragmentTexture(mistRatioTexture, index: 2)
-
-            var raindropsCount: Float = Float(raindrops.count)
-            encoder.setFragmentBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
-            encoder.setFragmentBytes(&raindrops, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropsCount), index: 1)
-
-            encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
-            encoder.popDebugGroup()
-            encoder.endEncoding()
-            
-            commandBuffer.present(currentDrawable)
-            commandBuffer.commit()
+            renderFinalImage(in: view, cameraTexture: cameraTexture)
         }
 
         func createRaindrops() -> [SIMD2<Float>] {
@@ -173,13 +131,12 @@ struct MetalView: UIViewRepresentable {
                 return SIMD2<Float>(Float(-deviceMotion.gravity.y), Float(-deviceMotion.gravity.x))
             }
             // Just in case we cannot get the gravity data, we're always letting drops go down
-            return SIMD2<Float>(0, 0)
+            return SIMD2<Float>(0, 1)
         }
         
         func updateTouches(view: MTKView) {
             let uiTouches = (view as! MTKTouchAwareView).currentTouches
-            self.touches = uiTouches.map({
-                touch in
+            self.touches = uiTouches.map({ touch in
                 let location = touch.location(in: view)
                 // Divide both x and y location by width, since we want normalized
                 // coordinates for our shader
@@ -189,28 +146,8 @@ struct MetalView: UIViewRepresentable {
             })
             // Metal cannot handle an empty buffer, so we'll just add a dummy touch
             if self.touches.isEmpty {
-                self.touches = [SIMD2<Float>(0, 0)]
+                self.touches = [SIMD2<Float>(-1, -1)]
             }
-        }
-
-        func textureIsMissingOrWrongDimensions(_ texture: MTLTexture?, asTexture: MTLTexture) -> Bool {
-            return texture == nil
-                || texture!.width != asTexture.width
-                || texture!.height != asTexture.height
-        }
-        
-        func buildIdenticalTexture(asTexture texture: MTLTexture) -> MTLTexture {
-            return buildTexture(withSizeFrom: texture, pixelFormat: texture.pixelFormat)
-        }
-        
-        func buildTexture(withSizeFrom texture: MTLTexture, pixelFormat: MTLPixelFormat) -> MTLTexture {
-            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
-                pixelFormat: pixelFormat,
-                width: texture.width,
-                height: texture.height,
-                mipmapped: false)
-            textureDescriptor.usage = [.shaderRead, .shaderWrite]
-            return metalDevice.makeTexture(descriptor: textureDescriptor)!
         }
         
         func blurTexture(sourceTexture: MTLTexture, destinationTexture: MTLTexture) {
@@ -230,12 +167,10 @@ struct MetalView: UIViewRepresentable {
                                                texture.height / threadgroupCounts.height,
                                                1);
                 
-                // let pipeline=...
                 let buffer = metalCommandQueue.makeCommandBuffer()!
                 let encoder = buffer.makeComputeCommandEncoder()!
                 encoder.setComputePipelineState(pipeline)
                 encoder.setTexture(texture, index: 0)
-                // TODO: Configure argument table with finger position
 
                 var raindropsCount: Float = Float(raindrops.count)
                 encoder.setBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
@@ -251,8 +186,74 @@ struct MetalView: UIViewRepresentable {
                 buffer.commit()
                 buffer.waitUntilCompleted()
             } catch {
-                print("Unexpected error: \(error)")
+                print("Unexpected error adding mist: \(error)")
             }
+        }
+        
+        func renderFinalImage(in view: MTKView, cameraTexture: MTLTexture) {
+            let pipelineDescriptor = MTLRenderPipelineDescriptor()
+            pipelineDescriptor.sampleCount = 1
+            pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+            pipelineDescriptor.depthAttachmentPixelFormat = .invalid
+            pipelineDescriptor.vertexFunction = mapTextureFunction
+            pipelineDescriptor.fragmentFunction = displayTextureFunction
+            
+            var renderPipelineState: MTLRenderPipelineState?
+            do {
+                try renderPipelineState = metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
+            }
+            catch {
+                print("Failed creating a render state pipeline. Can't render the texture without one. \(error)")
+                return
+            }
+            
+            let commandBuffer = metalCommandQueue.makeCommandBuffer()!
+            guard
+                let currentRenderPassDescriptor = view.currentRenderPassDescriptor,
+                let currentDrawable = view.currentDrawable,
+                renderPipelineState != nil
+            else {
+                print("Missing something...")
+                return
+            }
+            
+            let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: currentRenderPassDescriptor)!
+            encoder.pushDebugGroup("RenderFrame")
+            encoder.setRenderPipelineState(renderPipelineState!)
+            encoder.setFragmentTexture(cameraTexture, index: 0)
+            encoder.setFragmentTexture(blurredTexture, index: 1)
+            encoder.setFragmentTexture(mistRatioTexture, index: 2)
+
+            var raindropsCount: Float = Float(raindrops.count)
+            encoder.setFragmentBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
+            encoder.setFragmentBytes(&raindrops, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropsCount), index: 1)
+
+            encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
+            encoder.popDebugGroup()
+            encoder.endEncoding()
+            
+            commandBuffer.present(currentDrawable)
+            commandBuffer.commit()
+        }
+        
+        func textureIsMissingOrWrongDimensions(_ texture: MTLTexture?, asTexture: MTLTexture) -> Bool {
+            return texture == nil
+                || texture!.width != asTexture.width
+                || texture!.height != asTexture.height
+        }
+        
+        func buildIdenticalTexture(asTexture texture: MTLTexture) -> MTLTexture {
+            return buildTexture(withSizeFrom: texture, pixelFormat: texture.pixelFormat)
+        }
+        
+        func buildTexture(withSizeFrom texture: MTLTexture, pixelFormat: MTLPixelFormat) -> MTLTexture {
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: pixelFormat,
+                width: texture.width,
+                height: texture.height,
+                mipmapped: false)
+            textureDescriptor.usage = [.shaderRead, .shaderWrite]
+            return metalDevice.makeTexture(descriptor: textureDescriptor)!
         }
     }
 }
