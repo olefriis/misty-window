@@ -181,8 +181,10 @@ struct MetalView: UIViewRepresentable {
             self.touches = uiTouches.map({
                 touch in
                 let location = touch.location(in: view)
+                // Divide both x and y location by width, since we want normalized
+                // coordinates for our shader
                 let x = location.x / view.frame.width
-                let y = location.y / view.frame.height
+                let y = location.y / view.frame.width
                 return SIMD2<Float>(Float(x), Float(y))
             })
             // Metal cannot handle an empty buffer, so we'll just add a dummy touch
