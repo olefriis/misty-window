@@ -98,8 +98,17 @@ struct MetalView: UIViewRepresentable {
             let gravity = currentGravity()
             for i in 0..<raindrops.count {
                 var raindrop = raindrops[i]
-                raindrop.x += 0.002 * gravity.x
-                raindrop.y += 0.002 * gravity.y
+                
+                // Follow gravity
+                let downwardSpeed = Float.random(in: 0..<0.004)
+                raindrop.x += downwardSpeed * gravity.x
+                raindrop.y += downwardSpeed * gravity.y
+                
+                // ...but also go a tiny bit sideways
+                let sidewaysSpeed = Float.random(in: -0.001..<0.001)
+                raindrop.x += sidewaysSpeed * gravity.y
+                raindrop.y += sidewaysSpeed * gravity.x
+
                 if raindrop.x < 0 || raindrop.x > 1 || raindrop.y < 0 || raindrop.y > 1 {
                     if abs(gravity.x) > abs(gravity.y) {
                         // Place drops to the left or the right
