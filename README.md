@@ -43,3 +43,4 @@ Getting up and running with Metal was made possible for me by reading a few arti
 
 ## License
 
+This code is licensed under the [Do What The Fuck You Want To Public License](LICENSE.txt).
