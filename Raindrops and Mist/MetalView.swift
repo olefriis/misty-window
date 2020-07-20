@@ -27,6 +27,11 @@ struct MetalView: UIViewRepresentable {
     }
 
     class Coordinator : NSObject, MTKViewDelegate {
+        struct Raindrop {
+            var position: SIMD2<Float>
+            var hidden: Bool
+        }
+        
         var parent: MetalView
         let motion = CMMotionManager()
         var gyroscopeTimer: Timer?
@@ -37,7 +42,8 @@ struct MetalView: UIViewRepresentable {
         var addMistKernelFunction: MTLFunction!
         var blurredTexture: MTLTexture?
         var mistRatioTexture: MTLTexture?
-        var raindrops: [SIMD2<Float>] = []
+        var raindrops: [Raindrop] = []
+        var raindropPositions: [SIMD2<Float>] = []
         var touches: [SIMD2<Float>] = []
 
         init(_ parent: MetalView) {
@@ -86,51 +92,66 @@ struct MetalView: UIViewRepresentable {
             renderFinalImage(in: view, cameraTexture: cameraTexture)
         }
 
-        func createRaindrops() -> [SIMD2<Float>] {
-            var result: [SIMD2<Float>] = []
+        func createRaindrops() -> [Raindrop] {
+            var result: [Raindrop] = []
             for _ in 0..<50 {
-                result.append(SIMD2<Float>(Float.random(in: 0..<1), Float.random(in: 0..<1)))
+                result.append(Raindrop(
+                    position: SIMD2<Float>(Float.random(in: 0..<1), Float.random(in: 0..<1)),
+                    hidden: false
+                ))
             }
             return result
         }
         
         func updateRaindrops() {
             let gravity = currentGravity()
+            
+            // Very ugly, old-school for loop. Idiomatic Swift for loop doesn't let me change
+            // the array elements. Maybe there's something better I can do here?
             for i in 0..<raindrops.count {
                 var raindrop = raindrops[i]
                 
                 // Follow gravity
                 let downwardSpeed = Float.random(in: 0..<0.004)
-                raindrop.x += downwardSpeed * gravity.x
-                raindrop.y += downwardSpeed * gravity.y
+                raindrop.position.x += downwardSpeed * gravity.x
+                raindrop.position.y += downwardSpeed * gravity.y
                 
                 // ...but also go a tiny bit sideways
                 let sidewaysSpeed = Float.random(in: -0.001..<0.001)
-                raindrop.x += sidewaysSpeed * gravity.y
-                raindrop.y += sidewaysSpeed * gravity.x
+                raindrop.position.x += sidewaysSpeed * gravity.y
+                raindrop.position.y += sidewaysSpeed * gravity.x
 
-                if raindrop.x < 0 || raindrop.x > 1 || raindrop.y < 0 || raindrop.y > 1 {
+                if raindrop.position.x < 0 || raindrop.position.x > 1 || raindrop.position.y < 0 || raindrop.position.y > 1 {
                     if abs(gravity.x) > abs(gravity.y) {
                         // Place drops to the left or the right
                         if gravity.x < 0 {
                             // Place drops to the right
-                            raindrop.x = 1
+                            raindrop.position.x = 1
                         } else {
-                            raindrop.x = 0
+                            raindrop.position.x = 0
                         }
-                        raindrop.y = Float.random(in: 0..<1)
+                        raindrop.position.y = Float.random(in: 0..<1)
                     } else {
                         // Place drops at the top or bottom
                         if gravity.y < 0 {
                             // Place tops at the bottom
-                            raindrop.y = 1
+                            raindrop.position.y = 1
                         } else {
-                            raindrop.y = 0
+                            raindrop.position.y = 0
                         }
-                        raindrop.x = Float.random(in: 0..<1)
+                        raindrop.position.x = Float.random(in: 0..<1)
                     }
+                    raindrop.hidden = false
                 }
                 raindrops[i] = raindrop
+            }
+            
+            self.raindropPositions = raindrops
+                .filter({!$0.hidden})
+                .map({$0.position})
+            if self.raindropPositions.isEmpty {
+                // Metal cannot handle an empty buffer, so we'll just add a dummy raindrop position
+                self.raindropPositions = [SIMD2<Float>(-1, -1)]
             }
         }
         
@@ -153,8 +174,24 @@ struct MetalView: UIViewRepresentable {
                 let y = location.y / view.frame.width
                 return SIMD2<Float>(Float(x), Float(y))
             })
-            // Metal cannot handle an empty buffer, so we'll just add a dummy touch
+            
+            // Hide wiped-out raindrops
+            for i in 0..<raindrops.count {
+                var raindrop = raindrops[i]
+                touches.forEach({touch in
+                    let distX = touch.x - raindrop.position.x
+                    let distY = touch.y - raindrop.position.y
+                    let distanceSquared = (distX*distX) + (distY*distY)
+                    let fingerRadius = Float(0.05)
+                    if distanceSquared < (fingerRadius*fingerRadius) {
+                        raindrop.hidden = true
+                    }
+                })
+                raindrops[i] = raindrop
+            }
+            
             if self.touches.isEmpty {
+                // Metal cannot handle an empty buffer, so we'll just add a dummy touch
                 self.touches = [SIMD2<Float>(-1, -1)]
             }
         }
@@ -181,9 +218,9 @@ struct MetalView: UIViewRepresentable {
                 encoder.setComputePipelineState(pipeline)
                 encoder.setTexture(texture, index: 0)
 
-                var raindropsCount: Float = Float(raindrops.count)
-                encoder.setBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
-                encoder.setBytes(&raindrops, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropsCount), index: 1)
+                var raindropPositionsCount: Float = Float(raindropPositions.count)
+                encoder.setBytes(&raindropPositionsCount, length: MemoryLayout<Float>.stride, index: 0)
+                encoder.setBytes(&raindropPositions, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropPositionsCount), index: 1)
                 
                 var touchesCount: Float = Float(touches.count)
                 encoder.setBytes(&touchesCount, length: MemoryLayout<Float>.stride, index: 2)
@@ -233,9 +270,9 @@ struct MetalView: UIViewRepresentable {
             encoder.setFragmentTexture(blurredTexture, index: 1)
             encoder.setFragmentTexture(mistRatioTexture, index: 2)
 
-            var raindropsCount: Float = Float(raindrops.count)
-            encoder.setFragmentBytes(&raindropsCount, length: MemoryLayout<Float>.stride, index: 0)
-            encoder.setFragmentBytes(&raindrops, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropsCount), index: 1)
+            var raindropPositionsCount: Float = Float(raindropPositions.count)
+            encoder.setFragmentBytes(&raindropPositionsCount, length: MemoryLayout<Float>.stride, index: 0)
+            encoder.setFragmentBytes(&raindropPositions, length: MemoryLayout<SIMD2<Float>>.stride * Int(raindropPositionsCount), index: 1)
 
             encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
             encoder.popDebugGroup()
