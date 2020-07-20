@@ -1,21 +1,13 @@
-//
-//  CameraInput.swift
-//  Raindrops and Mist
-//
-//  Created by Ole Friis Østergaard on 03/07/2020.
-//  Copyright © 2020 Retrofit Games. All rights reserved.
-//
-
 import Foundation
 import AVFoundation
 
 class CameraInput: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     let captureSession = AVCaptureSession()
     
-    /// Texture cache we will use for converting frame images to textures
+    // Texture cache we will use for converting frame images to textures
     var textureCache: CVMetalTextureCache!
 
-    /// `MTLDevice` we need to initialize texture cache
+    // `MTLDevice` we need to initialize texture cache
     var metalDevice = MTLCreateSystemDefaultDevice()
 
     var texture: MTLTexture?
@@ -65,7 +57,7 @@ class CameraInput: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             let outputData = AVCaptureVideoDataOutput()
             outputData.videoSettings = [
                 kCVPixelBufferPixelFormatTypeKey as String:
-                    Int(kCVPixelFormatType_32BGRA) //Int(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)
+                    Int(kCVPixelFormatType_32BGRA)
             ]
             
             let captureSessionQueue = DispatchQueue(label: "CameraSessionQueue", attributes: [])

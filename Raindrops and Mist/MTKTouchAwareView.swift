@@ -1,11 +1,3 @@
-//
-//  MTKTouchAwareView.swift
-//  Raindrops and Mist
-//
-//  Created by Ole Friis Østergaard on 18/07/2020.
-//  Copyright © 2020 Retrofit Games. All rights reserved.
-//
-
 import Foundation
 import MetalKit
 
