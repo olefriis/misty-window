@@ -6,7 +6,7 @@ to see even shittier code, look no further than `git log`...
 
 ## Enough talk! Show me what it looks like!
 
-...
+![Showcase](./Showcase.gif)
 
 This is just a small example of using Metal. By using the iOS camera and doing some image processing,
 it makes it look like your iPhone is a foggy piece of glass with raindrops rolling down.
@@ -24,7 +24,10 @@ fix a few things I haven't got around to:
   raindrops leave smaller raindrops in their paths?
 * Probably a few race conditions in the code, as I haven't focused on that part.
 * Get it working with 60 FPS. I _guess_ it's relatively easy to get the camera data 60 times a second,
-  but frankly I've no clue.
+  but frankly I've no clue. And I think currently we're pretty hard on the GPU, so perhaps 60 FPS is
+  not a possibility per se.
+* My Swift fu is far from perfect. Probably lots of places where I should conver the code to more
+  idiomatic Swift.
 
 ## How was this done?
 
