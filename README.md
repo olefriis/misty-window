@@ -28,6 +28,8 @@ fix a few things I haven't got around to:
   not a possibility per se.
 * My Swift fu is far from perfect. Probably lots of places where I should conver the code to more
   idiomatic Swift.
+* Parts of the Metal pipelines that are constructed on each frame can probably be reused, which may save
+  some CPU and GPU cycles.
 
 ## How was this done?
 
