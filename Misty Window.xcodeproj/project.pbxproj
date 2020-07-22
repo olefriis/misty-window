@@ -21,7 +21,7 @@
 
 /* Begin PBXFileReference section */
 		6ECA8EFA24C2E4900077AE72 /* MTKTouchAwareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTKTouchAwareView.swift; sourceTree = "<group>"; };
-		6EDFFF3C24AF0BBB00B99143 /* Raindrops and Mist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Raindrops and Mist.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EDFFF3C24AF0BBB00B99143 /* Misty Window.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Misty Window.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6EDFFF3F24AF0BBB00B99143 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6EDFFF4124AF0BBB00B99143 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		6EDFFF4324AF0BBB00B99143 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -48,7 +48,7 @@
 		6EDFFF3324AF0BBB00B99143 = {
 			isa = PBXGroup;
 			children = (
-				6EDFFF3E24AF0BBB00B99143 /* Raindrops and Mist */,
+				6EDFFF3E24AF0BBB00B99143 /* Misty Window */,
 				6EDFFF3D24AF0BBB00B99143 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,12 +56,12 @@
 		6EDFFF3D24AF0BBB00B99143 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6EDFFF3C24AF0BBB00B99143 /* Raindrops and Mist.app */,
+				6EDFFF3C24AF0BBB00B99143 /* Misty Window.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		6EDFFF3E24AF0BBB00B99143 /* Raindrops and Mist */ = {
+		6EDFFF3E24AF0BBB00B99143 /* Misty Window */ = {
 			isa = PBXGroup;
 			children = (
 				6EDFFF3F24AF0BBB00B99143 /* AppDelegate.swift */,
@@ -76,7 +76,7 @@
 				6EDFFF5924AFA0DB00B99143 /* CameraShader.metal */,
 				6ECA8EFA24C2E4900077AE72 /* MTKTouchAwareView.swift */,
 			);
-			path = "Raindrops and Mist";
+			path = "Misty Window";
 			sourceTree = "<group>";
 		};
 		6EDFFF4724AF0BBD00B99143 /* Preview Content */ = {
@@ -90,9 +90,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		6EDFFF3B24AF0BBB00B99143 /* Raindrops and Mist */ = {
+		6EDFFF3B24AF0BBB00B99143 /* Misty Window */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6EDFFF5024AF0BBD00B99143 /* Build configuration list for PBXNativeTarget "Raindrops and Mist" */;
+			buildConfigurationList = 6EDFFF5024AF0BBD00B99143 /* Build configuration list for PBXNativeTarget "Misty Window" */;
 			buildPhases = (
 				6EDFFF3824AF0BBB00B99143 /* Sources */,
 				6EDFFF3924AF0BBB00B99143 /* Frameworks */,
@@ -102,9 +102,9 @@
 			);
 			dependencies = (
 			);
-			name = "Raindrops and Mist";
-			productName = "Raindrops and Mist";
-			productReference = 6EDFFF3C24AF0BBB00B99143 /* Raindrops and Mist.app */;
+			name = "Misty Window";
+			productName = "Misty Window";
+			productReference = 6EDFFF3C24AF0BBB00B99143 /* Misty Window.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -122,7 +122,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 6EDFFF3724AF0BBB00B99143 /* Build configuration list for PBXProject "Raindrops and Mist" */;
+			buildConfigurationList = 6EDFFF3724AF0BBB00B99143 /* Build configuration list for PBXProject "Misty Window" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -135,7 +135,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				6EDFFF3B24AF0BBB00B99143 /* Raindrops and Mist */,
+				6EDFFF3B24AF0BBB00B99143 /* Misty Window */,
 			);
 		};
 /* End PBXProject section */
@@ -301,15 +301,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = "\"Raindrops and Mist/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Misty Window/Preview Content\"";
 				DEVELOPMENT_TEAM = G865E4Z265;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = "Raindrops and Mist/Info.plist";
+				INFOPLIST_FILE = "Misty Window/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "RetrofitGames.Raindrops-and-Mist";
+				PRODUCT_BUNDLE_IDENTIFIER = "RetrofitGames.Misty-Window";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -321,15 +321,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = "\"Raindrops and Mist/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Misty Window/Preview Content\"";
 				DEVELOPMENT_TEAM = G865E4Z265;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = "Raindrops and Mist/Info.plist";
+				INFOPLIST_FILE = "Misty Window/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "RetrofitGames.Raindrops-and-Mist";
+				PRODUCT_BUNDLE_IDENTIFIER = "RetrofitGames.Misty-Window";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -339,7 +339,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		6EDFFF3724AF0BBB00B99143 /* Build configuration list for PBXProject "Raindrops and Mist" */ = {
+		6EDFFF3724AF0BBB00B99143 /* Build configuration list for PBXProject "Misty Window" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6EDFFF4E24AF0BBD00B99143 /* Debug */,
@@ -348,7 +348,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6EDFFF5024AF0BBD00B99143 /* Build configuration list for PBXNativeTarget "Raindrops and Mist" */ = {
+		6EDFFF5024AF0BBD00B99143 /* Build configuration list for PBXNativeTarget "Misty Window" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6EDFFF5124AF0BBD00B99143 /* Debug */,

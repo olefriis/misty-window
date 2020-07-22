@@ -1,4 +1,4 @@
-# Raindrops and Mist (in Metal)
+# Misty Window (in Metal)
 
 Alert: This repo contains very messy code. It is my first foray into using Metal on iOS and is mainly
 meant as a learning exercise. Don't expect well-structured or well-documented code. Oh, and if you want
