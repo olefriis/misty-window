@@ -238,7 +238,6 @@ struct MetalView: UIViewRepresentable {
         
         func renderFinalImage(in view: MTKView, cameraTexture: MTLTexture) {
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
-            pipelineDescriptor.sampleCount = 1
             pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
             pipelineDescriptor.depthAttachmentPixelFormat = .invalid
             pipelineDescriptor.vertexFunction = mapTextureFunction
